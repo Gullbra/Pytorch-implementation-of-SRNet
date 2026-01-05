@@ -5,7 +5,7 @@ from typing import Any, Dict
 import torch
 from torch import nn
 
-from opts.options import arguments
+from ..opts import arguments
 
 opt = arguments()
 

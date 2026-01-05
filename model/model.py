@@ -2,7 +2,7 @@
 import torch
 from torch import Tensor
 from torch import nn
-from model.utils import Type1, Type2, Type3, Type4
+from .utils import Type1, Type2, Type3, Type4
 
 
 class Srnet(nn.Module):

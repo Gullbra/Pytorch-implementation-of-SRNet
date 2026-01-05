@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 
 import imageio as io
 
-from opts.options import arguments
+from ..opts import arguments
 
 opt = arguments()
 # pylint: disable=E1101
