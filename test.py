@@ -15,44 +15,67 @@ else:
 print("Modules imported.")
 
 
-def test_srnet(cover_img_path: str, stego_img_path: str, test_batch_size: int = 40):
-  checkpoint_path = "./srnet_model/checkpoints/Srnet_model_weights.pt"
-  device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-  print(f"Using device: {device}")
-
+def test_srnet(
+  cover_img_dir: Path, 
+  stego_img_dir: Path,
+  checkpoint_path: Path = Path("./srnet_model/checkpoints/Srnet_model_weights.pt"), 
+  test_batch_size: int = 40,
+  verbose: bool = False
+) -> float:
+  
   # Loading images
-  cover_image_names = sorted(glob(cover_img_path + "/*.png"))
-  stego_image_names = sorted(glob(stego_img_path + "/*.png"))
+  if verbose:
+    print("Loading images...")
+  if not cover_img_dir.exists():
+    raise FileNotFoundError("Cover directory does not exist.")
+  if not stego_img_dir.exists():
+    raise FileNotFoundError("Stego directory does not exist.")
 
-  if not cover_image_names or not stego_image_names:
-    raise ValueError("No images found. Check your glob patterns.")
+  cover_image_paths = sorted(cover_img_dir.glob("*.png"))
+  stego_image_paths = sorted(stego_img_dir.glob("*.png"))
+  
+  if not cover_image_paths:
+    raise FileNotFoundError(f"No .png files found in {cover_img_dir.resolve()}.")
+  if not stego_image_paths:
+    raise FileNotFoundError(f"No .png files found in {stego_img_dir.resolve()}.")
 
-  min_images = min(len(cover_image_names), len(stego_image_names))
-  print(f"Found {len(cover_image_names)} cover and {len(stego_image_names)} stego images")
-  print(f"Using {min_images} pairs for testing")
+  min_images = min(len(cover_image_paths), len(stego_image_paths))
+  if verbose:
+    print(f"Found {len(cover_image_paths)} cover and {len(stego_image_paths)} stego images")
+    print(f"Using {min_images} pairs for testing")
+    print()
 
   # Initialize model
+  device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+  if verbose:
+    print(f"Using device: {device}")
+
   model = Srnet().to(device)
   model.eval()  # Set to evaluation mode
 
   # Load checkpoint if available
-  if Path(checkpoint_path).exists():
-    print(f"Loading checkpoint from: {checkpoint_path}")
+  if checkpoint_path.exists():
+    if verbose:
+      print(f"Loading checkpoint from: {checkpoint_path}")
     ckpt = torch.load(checkpoint_path, map_location=device)
     model.load_state_dict(ckpt["model_state_dict"])
-    print("Checkpoint loaded successfully")
+    if verbose:
+      print("Checkpoint loaded successfully")
   else:
-    print(f"Warning: Checkpoint not found at {checkpoint_path}")
-    print("Using randomly initialized weights (model is untrained)")
+    if verbose:
+      print(f"Warning: Checkpoint not found at {checkpoint_path}")
+      print("Using randomly initialized weights (model is untrained)")
 
   test_accuracy = []
   
-  with torch.no_grad():  # Disable gradient computation for inference
+  # Disable gradient computation for inference
+  # Since aren't updating weights, this saves memory and computations
+  with torch.no_grad():  
     for idx in range(0, min_images, test_batch_size // 2):
       # Get batches (handle last batch being smaller)
       batch_size = min(test_batch_size // 2, min_images - idx)
-      cover_batch = cover_image_names[idx : idx + batch_size]
-      stego_batch = stego_image_names[idx : idx + batch_size]
+      cover_batch = cover_image_paths[idx : idx + batch_size]
+      stego_batch = stego_image_paths[idx : idx + batch_size]
       
       # Build interleaved batch more efficiently
       batch_paths = []
@@ -90,10 +113,19 @@ def test_srnet(cover_img_path: str, stego_img_path: str, test_batch_size: int = 
 
 
 if __name__ == "__main__":
-  # Example usage
+  cover_dir = Path("../images/BOSSbase_1.01[.png]/test/cover")
+  stego_dir = Path("../images/BOSSbase_1.01[.png]/test/stego")
+
+  if not cover_dir.exists():
+    raise FileNotFoundError("Cover directory does not exist.")
+  
+  if not stego_dir.exists():
+    raise FileNotFoundError("Stego directory does not exist.")
+
   test_srnet(
-    cover_img_path="/path/to/cover/images/*.png",
-    stego_img_path="/path/to/stego/images/*.png"
+    cover_img_dir = cover_dir,
+    stego_img_dir = stego_dir,
+    verbose=True
   )
 
 
@@ -103,9 +135,9 @@ if __name__ == "__main__":
   # # pylint: enable=E1101
   # test_accuracy = []
 
-  # for idx in range(0, len(cover_image_names), test_batch_size // 2):
-  #   cover_batch = cover_image_names[idx : idx + test_batch_size // 2]
-  #   stego_batch = stego_image_names[idx : idx + test_batch_size // 2]
+  # for idx in range(0, len(cover_image_paths), test_batch_size // 2):
+  #   cover_batch = cover_image_paths[idx : idx + test_batch_size // 2]
+  #   stego_batch = stego_image_paths[idx : idx + test_batch_size // 2]
 
   #   batch = []
   #   batch_labels = []
