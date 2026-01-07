@@ -5,6 +5,7 @@ print("Importig modules for SRNet test...")
 from glob import glob
 from pathlib import Path
 import torch
+import random
 import imageio as io
 
 if __name__ == "__main__":
@@ -20,7 +21,8 @@ def test_srnet(
   stego_img_dir: Path,
   checkpoint_path: Path = Path("./srnet_model/checkpoints/Srnet_model_weights.pt"), 
   test_batch_size: int = 40,
-  verbose: bool = False
+  verbose: bool = False,
+  limit_images: int | None = None
 ) -> float:
   
   # Loading images
@@ -40,10 +42,17 @@ def test_srnet(
     raise FileNotFoundError(f"No .png files found in {stego_img_dir.resolve()}.")
 
   min_images = min(len(cover_image_paths), len(stego_image_paths))
+
   if verbose:
     print(f"Found {len(cover_image_paths)} cover and {len(stego_image_paths)} stego images")
     print(f"Using {min_images} pairs for testing")
     print()
+
+  if limit_images is not None and limit_images > 0 and limit_images // 2 < min(len(list(cover_image_paths)), len(list(stego_image_paths))):
+    cover_image_paths = cover_image_paths[:limit_images // 2]
+    stego_image_paths = stego_image_paths[:limit_images // 2]
+    if verbose:
+      print(f"Limiting to {limit_images} images ({limit_images // 2} cover and {limit_images // 2} stego).")
 
   # Initialize model
   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -125,7 +134,8 @@ if __name__ == "__main__":
   test_srnet(
     cover_img_dir = cover_dir,
     stego_img_dir = stego_dir,
-    verbose=True
+    verbose=True,
+    limit_images=200
   )
 
 
