@@ -8,9 +8,9 @@ from torch.utils.data import Dataset
 
 import imageio as io
 
-from ..opts import arguments
+# from ..opts import arguments
 
-opt = arguments()
+# opt = arguments()
 # pylint: disable=E1101
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # pylint: enable=E1101
@@ -53,7 +53,8 @@ class DatasetLoad(Dataset):
             Tuple[Tensor, Tensor]: cover and stego pair.
         """
         index += 1
-        img_name = str(index) + ".pgm"
+        # img_name = str(index) + ".pgm"
+        img_name = str(index) + ".png"
         cover_img = io.imread(os.path.join(self.cover, img_name))
         stego_img = io.imread(os.path.join(self.stego, img_name))
         # pylint: disable=E1101
